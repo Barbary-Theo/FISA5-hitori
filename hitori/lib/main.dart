@@ -32,7 +32,7 @@ class HitoriPage extends StatefulWidget {
 }
 
 class _HitoriPageState extends State<HitoriPage> {
-  
+
   final List<List<int>> grid = [];
   final List<List<Color>> gridColor = [];
 
@@ -92,8 +92,8 @@ class _HitoriPageState extends State<HitoriPage> {
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: Colors.black,
-                    width: 1.0,          
-                  ), 
+                    width: 1.0,
+                  ),
                   color: gridColor[index ~/ gridColor[0].length][index % gridColor[0].length]
                 ),
                 child: Center(
