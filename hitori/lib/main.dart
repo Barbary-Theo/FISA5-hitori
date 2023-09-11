@@ -33,19 +33,82 @@ class HitoriPage extends StatefulWidget {
 }
 
 class _HitoriPageState extends State<HitoriPage> {
-  final List<List<int>> grid = [];
+  List<List<int>> grid = [];
   final List<List<Color>> gridColor = [];
 
   void initializeGrid() {
     var random = Random();
+    final List<List<int>> grid1 = [
+      [4, 4, 5, 5, 3],
+      [3, 1, 5, 4, 4],
+      [4, 2, 1, 3, 2],
+      [2, 3, 5, 1, 1],
+      [2, 2, 3, 4, 1]
+    ];
+    final List<List<int>> grid2 = [
+      [2, 3, 2, 1, 3],
+      [2, 1, 1, 3, 4],
+      [1, 4, 3, 4, 2],
+      [3, 3, 5, 4, 4],
+      [5, 1, 2, 2, 3]
+    ];
 
+    final List<List<int>> grid3 = [
+      [3, 1, 5, 5, 4],
+      [5, 5, 4, 4, 2],
+      [2, 3, 4, 5, 3],
+      [4, 5, 1, 3, 5],
+      [4, 4, 2, 5, 3]
+    ];
+
+    final List<List<int>> grid4 = [
+      [1, 1, 2, 5, 5],
+      [5, 4, 4, 2, 1],
+      [1, 5, 1, 5, 3],
+      [3, 5, 4, 1, 5],
+      [4, 1, 5, 1, 2]
+    ];
+
+    int rdm = random.nextInt(4);
+    switch (rdm) {
+      case 1:
+        {
+          grid = grid1;
+        }
+        break;
+
+      case 2:
+        {
+          grid = grid2;
+        }
+        break;
+
+      case 3:
+        {
+          grid = grid3;
+        }
+        break;
+
+      case 4:
+        {
+          grid = grid4;
+        }
+        break;
+    }
+    /*int tmp = 1;
     for (int i = 0; i < 5; i++) {
+      tmp = i + 1;
       List<int> row = [];
       for (int j = 0; j < 5; j++) {
-        row.add(random.nextInt(5) + 1);
+        row.add(tmp);
+        tmp++;
+        if (tmp > 5) {
+          tmp = 1;
+        }
       }
+
       grid.add(row);
-    }
+    }*/
 
     for (int i = 0; i < 5; i++) {
       List<Color> rowColor = [];
