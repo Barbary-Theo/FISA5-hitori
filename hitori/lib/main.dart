@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -33,10 +34,12 @@ class HitoriPage extends StatefulWidget {
 }
 
 class _HitoriPageState extends State<HitoriPage> {
-  List<List<int>> grid = [];
-  final List<List<Color>> gridColor = [];
-  final List<List<bool>> gridCheck = [];
+  final List<List<int>> grid = [];
+  List<List<Color>> gridColor = [];
+  List<List<bool>> gridCheck = [];
   bool isGameTerminated = false;
+  DateTime whenGameStarted = DateTime.now();
+  String chrono = "";
 
   void initializeGrid() {
     var random = Random();
@@ -75,43 +78,30 @@ class _HitoriPageState extends State<HitoriPage> {
     switch (rdm) {
       case 1:
         {
-          grid = grid1;
+          copyGrid(grid1);
         }
         break;
 
       case 2:
         {
-          grid = grid2;
+          copyGrid(grid2);
         }
         break;
 
       case 3:
         {
-          grid = grid3;
+          copyGrid(grid3);
         }
         break;
 
       case 4:
         {
-          grid = grid4;
+          copyGrid(grid4);
         }
         break;
     }
-    /*int tmp = 1;
-    for (int i = 0; i < 5; i++) {
-      tmp = i + 1;
-      List<int> row = [];
-      for (int j = 0; j < 5; j++) {
-        row.add(tmp);
-        tmp++;
-        if (tmp > 5) {
-          tmp = 1;
-        }
-      }
 
-      grid.add(row);
-    }*/
-
+    gridColor = [];
     for (int i = 0; i < 5; i++) {
       List<Color> rowColor = [];
       for (int j = 0; j < 5; j++) {
@@ -120,12 +110,20 @@ class _HitoriPageState extends State<HitoriPage> {
       gridColor.add(rowColor);
     }
 
+    gridCheck = [];
     for (int i = 0; i < 5; i++) {
       List<bool> rowBool = [];
       for (int j = 0; j < 5; j++) {
         rowBool.add(false);
       }
       gridCheck.add(rowBool);
+    }
+  }
+
+  void copyGrid(List<List<int>> gridToCopy) {
+    grid.clear();
+    for (var ele in gridToCopy) {
+      grid.add(ele);
     }
   }
 
@@ -139,7 +137,11 @@ class _HitoriPageState extends State<HitoriPage> {
 
   @override
   void initState() {
+    whenGameStarted = DateTime.now();
     initializeGrid();
+    Timer.periodic(Duration(seconds: 1), (timer) {
+      updateCurrentChrono();
+    });
   }
 
   bool isAllWhiteCaseHasBeenVisited() {
@@ -303,11 +305,8 @@ class _HitoriPageState extends State<HitoriPage> {
                               isGameTerminated = false;
                               Navigator.of(context).pop();
                               setState(() {
-                                for (int i = 0; i < grid.length; i++) {
-                                  for (int j = 0; j < grid[0].length; j++) {
-                                    gridColor[i][j] = Colors.white;
-                                  }
-                                }
+                                whenGameStarted = DateTime.now();
+                                initializeGrid();
                               });
                             },
                             style: ElevatedButton.styleFrom(
@@ -331,7 +330,52 @@ class _HitoriPageState extends State<HitoriPage> {
             ); // Use your custom modal content widget here
           },
         );
+      } else {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Icon(
+                Icons.error,
+                size: 60,
+                color: Colors.red,
+              ),
+              content: Text(
+                'The grid is not completely solved yet or incorrect',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    // Close the alert dialog
+                    Navigator.of(context).pop();
+                  },
+                  child: Text(
+                    'OK',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
       }
+    });
+  }
+
+  void updateCurrentChrono() {
+    Duration duration = DateTime.now().difference(whenGameStarted);
+    var minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    var seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+    setState(() {
+      chrono = '$minutes:$seconds';
     });
   }
 
@@ -346,6 +390,10 @@ class _HitoriPageState extends State<HitoriPage> {
         alignment: Alignment.center,
         child: Column(
           children: <Widget>[
+            Text(
+              'Time spent : ' + chrono,
+              style: TextStyle(height: 3, fontSize: 17),
+            ),
             Flexible(
               child: FractionallySizedBox(
                 heightFactor: 0.7,
