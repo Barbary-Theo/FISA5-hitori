@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -33,8 +34,12 @@ class HitoriPage extends StatefulWidget {
 }
 
 class _HitoriPageState extends State<HitoriPage> {
-  List<List<int>> grid = [];
-  final List<List<Color>> gridColor = [];
+  final List<List<int>> grid = [];
+  List<List<Color>> gridColor = [];
+  List<List<bool>> gridCheck = [];
+  bool isGameTerminated = false;
+  DateTime whenGameStarted = DateTime.now();
+  String chrono = "";
 
   void initializeGrid() {
     var random = Random();
@@ -73,43 +78,30 @@ class _HitoriPageState extends State<HitoriPage> {
     switch (rdm) {
       case 1:
         {
-          grid = grid1;
+          copyGrid(grid1);
         }
         break;
 
       case 2:
         {
-          grid = grid2;
+          copyGrid(grid2);
         }
         break;
 
       case 3:
         {
-          grid = grid3;
+          copyGrid(grid3);
         }
         break;
 
       case 4:
         {
-          grid = grid4;
+          copyGrid(grid4);
         }
         break;
     }
-    /*int tmp = 1;
-    for (int i = 0; i < 5; i++) {
-      tmp = i + 1;
-      List<int> row = [];
-      for (int j = 0; j < 5; j++) {
-        row.add(tmp);
-        tmp++;
-        if (tmp > 5) {
-          tmp = 1;
-        }
-      }
 
-      grid.add(row);
-    }*/
-
+    gridColor = [];
     for (int i = 0; i < 5; i++) {
       List<Color> rowColor = [];
       for (int j = 0; j < 5; j++) {
@@ -117,11 +109,106 @@ class _HitoriPageState extends State<HitoriPage> {
       }
       gridColor.add(rowColor);
     }
+
+    gridCheck = [];
+    for (int i = 0; i < 5; i++) {
+      List<bool> rowBool = [];
+      for (int j = 0; j < 5; j++) {
+        rowBool.add(false);
+      }
+      gridCheck.add(rowBool);
+    }
+  }
+
+  void copyGrid(List<List<int>> gridToCopy) {
+    grid.clear();
+    for (var ele in gridToCopy) {
+      grid.add(ele);
+    }
+  }
+
+  void resetGridCheck() {
+    for (int i = 0; i < 5; i++) {
+      for (int j = 0; j < 5; j++) {
+        gridCheck[i][j] = false;
+      }
+    }
   }
 
   @override
   void initState() {
+    whenGameStarted = DateTime.now();
     initializeGrid();
+    Timer.periodic(Duration(seconds: 1), (timer) {
+      updateCurrentChrono();
+    });
+  }
+
+  bool isAllWhiteCaseHasBeenVisited() {
+    for (int m = 0; m < gridColor.length; m++) {
+      for (int n = 0; n < gridColor[m].length; n++) {
+        if (gridColor[m][n] == Colors.white && gridCheck[m][n] == false)
+          return false;
+      }
+    }
+    return true;
+  }
+
+  void findPath(int i, int j) {
+    gridCheck[i][j] = true;
+    try {
+      if (gridColor[i - 1][j] == Colors.white && gridCheck[i - 1][j] == false)
+        findPath(i - 1, j);
+    } catch (e) {}
+    try {
+      if (gridColor[i + 1][j] == Colors.white && gridCheck[i + 1][j] == false)
+        findPath(i + 1, j);
+    } catch (e) {}
+    try {
+      if (gridColor[i][j - 1] == Colors.white && gridCheck[i][j - 1] == false)
+        findPath(i, j - 1);
+    } catch (e) {}
+    try {
+      if (gridColor[i][j + 1] == Colors.white && gridCheck[i][j + 1] == false)
+        findPath(i, j + 1);
+    } catch (e) {}
+  }
+
+  bool isPossibleToAccessToAllWhiteCase(int i, int j) {
+    findPath(i, j);
+    bool result = isAllWhiteCaseHasBeenVisited();
+    resetGridCheck();
+    return result;
+  }
+
+  bool existSameWhiteNumberOnRowOrColumn(int i, int j) {
+    int numberToCheck = grid[i][j];
+
+    //check row
+    for (int m = 0; m < gridColor.length; m++) {
+      if (m == i) {
+        for (int n = 0; n < gridColor[m].length; n++) {
+          if (n != j &&
+              gridColor[m][n] == Colors.white &&
+              grid[m][n] == numberToCheck) return true;
+        }
+      }
+    }
+
+    //check column
+    for (int m = 0; m < gridColor.length; m++) {
+      for (int n = 0; n < gridColor[m].length; n++) {
+        if (n == j) {
+          if (m != i &&
+              gridColor[m][n] == Colors.white &&
+              grid[m][n] == numberToCheck) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
   }
 
   bool isExistBlackAround(int i, int j) {
@@ -160,7 +247,7 @@ class _HitoriPageState extends State<HitoriPage> {
             gridColor[i][j - 1] == Colors.black ||
             gridColor[i][j + 1] == Colors.black;
       }
-    } on Exception catch (_) {
+    } catch (e) {
       return false;
     }
     return false;
@@ -173,11 +260,123 @@ class _HitoriPageState extends State<HitoriPage> {
       for (int j = 0; j < gridColor[0].length; j++) {
         if (gridColor[i][j] == Colors.black) {
           if (isExistBlackAround(i, j)) isPossible = false;
+        } else if (gridColor[i][j] == Colors.white) {
+          if (existSameWhiteNumberOnRowOrColumn(i, j)) isPossible = false;
+          if (!isPossibleToAccessToAllWhiteCase(i, j)) isPossible = false;
         }
       }
     }
+    setState(() {
+      isGameTerminated = isPossible;
+      if (isGameTerminated) {
+        showModalBottomSheet(
+          context: context,
+          builder: (BuildContext context) {
+            return Container(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Victory ! 🚀',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green),
+                  ),
+                  SizedBox(height: 16),
+                  Text('You can start a new game, have fun !'),
+                  SizedBox(height: 16),
+                  Padding(
+                      padding: EdgeInsets.all(3.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xFF150C09), // Shadow color
+                              offset:
+                                  Offset(5, 5), // Offset (horizontal, vertical)
+                              blurRadius: 0, // Blur radius (0 means no blur)
+                            ),
+                          ],
+                        ),
+                        child: TextButton(
+                            onPressed: () {
+                              isGameTerminated = false;
+                              Navigator.of(context).pop();
+                              setState(() {
+                                whenGameStarted = DateTime.now();
+                                initializeGrid();
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              primary: Color.fromRGBO(
+                                  229, 179, 55, 1), // Background color
+                              onPrimary: Colors.white, // Text color
+                              padding: EdgeInsets.all(16), // Button padding
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.zero),
+                            ),
+                            child: Text(
+                              'Again !',
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: Colors.black,
+                              ),
+                            )),
+                      )),
+                ],
+              ),
+            ); // Use your custom modal content widget here
+          },
+        );
+      } else {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Icon(
+                Icons.error,
+                size: 60,
+                color: Colors.red,
+              ),
+              content: Text(
+                'The grid is not completely solved yet or incorrect',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    // Close the alert dialog
+                    Navigator.of(context).pop();
+                  },
+                  child: Text(
+                    'OK',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    });
+  }
 
-    print(isPossible);
+  void updateCurrentChrono() {
+    Duration duration = DateTime.now().difference(whenGameStarted);
+    var minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    var seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+    setState(() {
+      chrono = '$minutes:$seconds';
+    });
   }
 
   @override
@@ -191,6 +390,10 @@ class _HitoriPageState extends State<HitoriPage> {
         alignment: Alignment.center,
         child: Column(
           children: <Widget>[
+            Text(
+              'Time spent : ' + chrono,
+              style: TextStyle(height: 3, fontSize: 17),
+            ),
             Flexible(
               child: FractionallySizedBox(
                 heightFactor: 0.7,
@@ -273,7 +476,7 @@ class _HitoriPageState extends State<HitoriPage> {
                             },
                             style: ElevatedButton.styleFrom(
                               primary: Color.fromRGBO(
-                                  240, 123, 0, 1), // Background color
+                                  121, 208, 106, 1), // Background color
                               onPrimary: Colors.white, // Text color
                               padding: EdgeInsets.all(16), // Button padding
                               shape: RoundedRectangleBorder(
@@ -312,7 +515,7 @@ class _HitoriPageState extends State<HitoriPage> {
                             },
                             style: ElevatedButton.styleFrom(
                               primary: Color.fromRGBO(
-                                  240, 123, 0, 1), // Background color
+                                  255, 81, 81, 1), // Background color
                               onPrimary: Colors.white, // Text color
                               padding: EdgeInsets.all(16), // Button padding
                               shape: RoundedRectangleBorder(
