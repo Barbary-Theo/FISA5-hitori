@@ -2,6 +2,9 @@
 
 Le jeu classique de l'Hitori
 
+Barbary Théo
+Thibaut Martin
+
 ## Features
 
 Au cours de ce projet, nous avons implémenter les features suivantes :
